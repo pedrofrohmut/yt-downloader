@@ -3,14 +3,17 @@ import { invoke } from "@tauri-apps/api/tauri"
 
 import { getValueFromRef, setValueToRef } from "./utils/react-utils"
 
+// Use snake here to make it compatible with the rust backend
 type DownloadRequest = {
     url: string
     output_dir: string
+    audio_only: boolean
 }
 
 const App = () => {
     const urlRef = useRef<HTMLInputElement | null>(null)
     const outputDirRef = useRef<HTMLInputElement | null>(null)
+    const [audioOnly, setAudioOnly] = useState(true)
 
     const [showMessage, setShowMessage] = useState(false)
     const [message, setMessage] = useState("")
@@ -44,7 +47,7 @@ const App = () => {
 
         // Always go for snake case when invoking Rust
         const resultMessage = (await invoke("download_video", {
-            download_request: { url, output_dir: outputDir } as DownloadRequest
+            download_request: { url, output_dir: outputDir, audio_only: audioOnly } as DownloadRequest
         })) as string
 
         handleShowMessage(resultMessage)
@@ -72,14 +75,41 @@ const App = () => {
                 <div className="page-title">YTMusic Downloader</div>
 
                 <form onSubmit={handleSubmit}>
+                    {/* URL */}
                     <div className="form-group">
                         <label>URL</label>
                         <input type="text" ref={urlRef} required />
                     </div>
+
+                    {/* Output Dir */}
                     <div className="form-group">
                         <label>OutputDir</label>
                         <input type="text" ref={outputDirRef} required />
                     </div>
+
+                    {/* Media Type */}
+                    <div className="form-group">
+                        <label>
+                            <input
+                                type="radio"
+                                value="audio"
+                                checked={audioOnly}
+                                onChange={() => setAudioOnly(true)}
+                            />
+                            Audio Only
+                        </label>
+
+                        <label>
+                            <input
+                                type="radio"
+                                value="video"
+                                checked={!audioOnly}
+                                onChange={() => setAudioOnly(false)}
+                            />
+                            Video
+                        </label>
+                    </div>
+
                     <div className="form-group">
                         <button type="submit">Download</button>
                     </div>

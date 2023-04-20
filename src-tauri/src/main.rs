@@ -8,6 +8,7 @@ use youtube_dl::YoutubeDl;
 struct DownloadRequest {
     url: String,
     output_dir: String,
+    audio_only: bool,
 }
 
 // yt-dlp --extract-audio --audio-format mp3 --audio-quality 0 "https://www.youtube.com/watch?v=oHg5SJYRHA0"
@@ -21,7 +22,7 @@ fn download_video(download_request: DownloadRequest) -> String
     let output = YoutubeDl::new(&download_request.url)
                      .download(true)
                      .output_directory(download_request.output_dir)
-                     .extract_audio(true)
+                     .extract_audio(download_request.audio_only)
                      .socket_timeout("15")
                      .run();
 
