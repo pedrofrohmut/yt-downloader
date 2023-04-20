@@ -1,35 +1,91 @@
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
+import { invoke } from "@tauri-apps/api/tauri"
 
-import { getValueFromRef } from "./utils/react-utils"
+import { getValueFromRef, setValueToRef } from "./utils/react-utils"
+
+type DownloadRequest = {
+    url: string
+    output_dir: string
+}
 
 const App = () => {
-    const artistRef = useRef<HTMLInputElement>(null)
+    const urlRef = useRef<HTMLInputElement | null>(null)
+    const outputDirRef = useRef<HTMLInputElement | null>(null)
 
-    const [typingTimeout, setTypingTimeout] = useState<NodeJS.Timeout | null>(null)
+    const [showMessage, setShowMessage] = useState(false)
+    const [message, setMessage] = useState("")
+    const [isErrorMessage, setIsErrorMessage] = useState(false)
 
-    const search = (text: string) => {
-        console.log("SEARCH: " + text)
+    const handleShowMessage = (msg: string) => {
+        setMessage(msg)
+        setShowMessage(true)
+        setTimeout(() => {
+            setMessage("")
+            setShowMessage(false)
+            setIsErrorMessage(false)
+        }, 2500)
     }
 
-    const delayedSearch = () => {
-        if (typingTimeout) clearTimeout(typingTimeout)
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault()
 
-        const searchText = getValueFromRef(artistRef)
-        if (searchText === "") return
+        const url = getValueFromRef(urlRef)
+        setValueToRef(urlRef, "")
 
-        const newTimeout = setTimeout(() => search(searchText), 700)
-        setTypingTimeout(newTimeout)
+        const outputDir = getValueFromRef(outputDirRef)
+
+        if (url === "" || outputDir === "") {
+            setIsErrorMessage(true)
+            handleShowMessage("Url and Output Dir are required")
+            return
+        }
+
+        localStorage.setItem("last_output_dir", outputDir)
+
+        // Always go for snake case when invoking Rust
+        const resultMessage = (await invoke("download_video", {
+            download_request: { url, output_dir: outputDir } as DownloadRequest
+        })) as string
+
+        handleShowMessage(resultMessage)
     }
+
+    useEffect(() => {
+        const lastOutputDir = localStorage.getItem("last_output_dir")
+        if (lastOutputDir) {
+            setValueToRef(outputDirRef, lastOutputDir)
+        }
+    }, [])
 
     return (
-        <div className="page-container">
-            <form>
-                <div className="form-group">
-                    <label>Artist</label>
-                    <input type="text" ref={artistRef} onKeyUp={delayedSearch} />
+        <>
+            {showMessage && (
+                <div
+                    onClick={() => setShowMessage(false)}
+                    className={`message-container ${isErrorMessage && "error"}`}
+                >
+                    {message}
                 </div>
-            </form>
-        </div>
+            )}
+
+            <div className="page-container">
+                <div className="page-title">YTMusic Downloader</div>
+
+                <form onSubmit={handleSubmit}>
+                    <div className="form-group">
+                        <label>URL</label>
+                        <input type="text" ref={urlRef} required />
+                    </div>
+                    <div className="form-group">
+                        <label>OutputDir</label>
+                        <input type="text" ref={outputDirRef} required />
+                    </div>
+                    <div className="form-group">
+                        <button type="submit">Download</button>
+                    </div>
+                </form>
+            </div>
+        </>
     )
 }
 
