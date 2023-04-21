@@ -78,7 +78,7 @@ button[type="submit"]:focus {
     opacity: 0.88;
     font-size: 1.8rem;
 
-    position: absolute;
+    position: fixed;
     padding: 0.6rem 2.8rem;
     bottom: 1.5rem;
     right: 1.5rem;
