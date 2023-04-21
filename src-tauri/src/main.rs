@@ -9,6 +9,8 @@ struct DownloadRequest {
     url: String,
     output_dir: String,
     audio_only: bool,
+    artist: String,
+    track_name: String,
 }
 
 // yt-dlp --extract-audio --audio-format mp3 --audio-quality 0 "https://www.youtube.com/watch?v=oHg5SJYRHA0"
@@ -19,9 +21,12 @@ fn download_video(download_request: DownloadRequest) -> String
 {
     println!("...Starting Download");
 
+    let output_template = download_request.artist + " - " + &download_request.track_name;
+
     let output = YoutubeDl::new(&download_request.url)
                      .download(true)
                      .output_directory(download_request.output_dir)
+                     .output_template(output_template)
                      .extract_audio(download_request.audio_only)
                      .socket_timeout("15")
                      .run();
@@ -30,7 +35,10 @@ fn download_video(download_request: DownloadRequest) -> String
 
     match output {
         Ok(_) => String::from("Download Complete"),
-        Err(_) => String::from("Error occured. Could not download")
+        Err(err) => {
+            println!("Error: {}", err);
+            String::from("Error occured. Could not download")
+        }
     }
 }
 

@@ -8,11 +8,15 @@ type DownloadRequest = {
     url: string
     output_dir: string
     audio_only: boolean
+    artist: string
+    track_name: string
 }
 
 const App = () => {
     const urlRef = useRef<HTMLInputElement | null>(null)
     const outputDirRef = useRef<HTMLInputElement | null>(null)
+    const artistRef = useRef<HTMLInputElement | null>(null)
+    const trackNameRef = useRef<HTMLInputElement | null>(null)
     const [audioOnly, setAudioOnly] = useState(true)
 
     const [showMessage, setShowMessage] = useState(false)
@@ -33,13 +37,16 @@ const App = () => {
         e.preventDefault()
 
         const url = getValueFromRef(urlRef)
-        setValueToRef(urlRef, "")
-
         const outputDir = getValueFromRef(outputDirRef)
+        const artist = getValueFromRef(artistRef)
+        const trackName = getValueFromRef(trackNameRef)
 
-        if (url === "" || outputDir === "") {
+        setValueToRef(urlRef, "")
+        setValueToRef(trackNameRef, "")
+
+        if (url === "" || outputDir === "" || artist === "" || trackName === "") {
             setIsErrorMessage(true)
-            handleShowMessage("Url and Output Dir are required")
+            handleShowMessage("Url, Output Dir, Artist and Track Name are required")
             return
         }
 
@@ -47,9 +54,18 @@ const App = () => {
 
         // Always go for snake case when invoking Rust
         const resultMessage = (await invoke("download_video", {
-            download_request: { url, output_dir: outputDir, audio_only: audioOnly } as DownloadRequest
+            download_request: {
+                url,
+                output_dir: outputDir,
+                audio_only: audioOnly,
+                artist,
+                track_name: trackName
+            } as DownloadRequest
         })) as string
 
+        if (resultMessage.includes("Error")) {
+            setIsErrorMessage(true)
+        }
         handleShowMessage(resultMessage)
     }
 
@@ -85,6 +101,18 @@ const App = () => {
                     <div className="form-group">
                         <label>OutputDir</label>
                         <input type="text" ref={outputDirRef} required />
+                    </div>
+
+                    {/* Artist */}
+                    <div className="form-group">
+                        <label>Artist</label>
+                        <input type="text" ref={artistRef} required />
+                    </div>
+
+                    {/* Track Name */}
+                    <div className="form-group">
+                        <label>Track Name</label>
+                        <input type="text" ref={trackNameRef} required />
                     </div>
 
                     {/* Media Type */}
