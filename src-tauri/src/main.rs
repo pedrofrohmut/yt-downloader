@@ -14,6 +14,7 @@ struct DownloadRequest {
     track_name: String,
 }
 
+//# Examples of yt-dlp as reference
 // yt-dlp --extract-audio --audio-format mp3 --audio-quality 0 "https://www.youtube.com/watch?v=oHg5SJYRHA0"
 // youtube-dl https://www.youtube.com/playlist?list=PLOU2XLYxmsILe6_eGvDN3GyiodoV3qNSC -A
 
@@ -36,9 +37,14 @@ fn download_video(download_request: DownloadRequest) -> String
         "best"
     };
 
-    let output_directory = format!(" -P \"{}\" ", download_request.output_dir);
-    let output_template = format!(" -o \"{} - {}\" ", download_request.artist,
-                                                      download_request.track_name);
+    let output_dir = if download_request.output_dir.ends_with("/") {
+        download_request.output_dir
+    } else {
+        String::from(download_request.output_dir + "/")
+    };
+
+    let output_directory = format!(" -P \"{}\" ", &output_dir);
+    let output_template = format!(" -o \"YT_DOWNLOADER_TEMP_FILE.webm\" ");
     let format_flag = format!(" --format \"{}\" ", format_string);
     let quoted_url = format!(" \"{}\" ", &download_request.url);
 
@@ -48,24 +54,40 @@ fn download_video(download_request: DownloadRequest) -> String
     yt_dlp_cmd.push_str(&format_flag);
     yt_dlp_cmd.push_str(&output_template);
     yt_dlp_cmd.push_str(&quoted_url);
-    yt_dlp_cmd.to_string();
 
-    let output = Command::new("bash")
-                     .arg("-c")
-                     .arg(yt_dlp_cmd)
-                     .output();
+    let yt_dlp_output = Command::new("bash").arg("-c").arg(yt_dlp_cmd).output();
 
-    match output {
-        Ok(_out) => {
-            println!("Download complete for url: {}", download_request.url);
-            // println!("LOG: {:?}", out);
-            String::from("Download Complete")
-        }
-        Err(err) => {
-            eprintln!("Error: {}", err);
-            String::from("Error occured. Could not download")
-        }
+    if let Err(err) = yt_dlp_output {
+        eprintln!("Error on yt-dlp download: {}", err);
+        return "Error occured. Could not download".to_string();
     }
+
+    let input_flag = format!(" -i \"{}YT_DOWNLOADER_TEMP_FILE.webm\" ", &output_dir);
+
+    let output_file = if download_request.audio_only {
+        format!(" \"{}{} - {}.mp3\" ", output_dir, download_request.artist, download_request.track_name)
+    } else {
+        format!(" \"{}{} - {}.mp4\" ", output_dir, download_request.artist, download_request.track_name)
+    };
+
+    let mut ffmpeg_cmd = String::new();
+    ffmpeg_cmd.push_str("ffmpeg ");
+    ffmpeg_cmd.push_str(&input_flag);
+    if download_request.audio_only {
+        ffmpeg_cmd.push_str(" -vn ");
+    }
+    ffmpeg_cmd.push_str(&output_file);
+
+    let ffmpeg_output = Command::new("bash").arg("-c").arg(ffmpeg_cmd).output();
+
+    if let Err(err) = ffmpeg_output {
+        eprintln!("Error to convert the video/audio: {}", err);
+        return String::from("Error occured. Could not convert the video/audio");
+    }
+
+    println!("ffmpeg stdout: {:?}", ffmpeg_output.unwrap().stdout);
+
+    return String::from("Download and Convertion Complete");
 }
 
 fn main()
