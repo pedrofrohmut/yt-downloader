@@ -8,6 +8,18 @@
     font-size: 16px;
 }
 
+@media (max-height: 800px) {
+    :root {
+        font-size: 13px;
+    }
+}
+
+@media (max-height: 400px) {
+    :root {
+        font-size: 12px;
+    }
+}
+
 body {
     min-height: 100vh;
     overflow-x: hidden;
@@ -22,13 +34,13 @@ body {
 }
 
 .page-title {
-    font-size: 2.5rem;
+    font-size: 2.3rem;
     font-weight: 600;
-    margin-bottom: 2rem;
+    margin-bottom: 1.5rem;
 }
 
 .form-group {
-    margin-bottom: 1.2rem;
+    margin-bottom: 1.2em;
 }
 
 label {
@@ -53,6 +65,10 @@ input[type="text"]:focus {
     background-color: #ccc;
     border: 2px solid #ccc;
     color: #333;
+}
+
+input[type="radio"] {
+    margin-right: 0.5em;
 }
 
 button[type="submit"] {
