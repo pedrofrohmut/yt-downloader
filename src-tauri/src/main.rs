@@ -28,18 +28,24 @@ fn download_video(download_request: DownloadRequest) -> String
 {
     println!("...Starting Download");
 
+    let format_string = if download_request.audio_only {
+        // Audio only
+        "bestaudio/best"
+    } else {
+        // Best audio and video
+        "best"
+    };
+
     let output_directory = format!(" -P \"{}\" ", download_request.output_dir);
     let output_template = format!(" -o \"{} - {}\" ", download_request.artist,
                                                       download_request.track_name);
+    let format_flag = format!(" --format \"{}\" ", format_string);
     let quoted_url = format!(" \"{}\" ", &download_request.url);
 
     let mut yt_dlp_cmd = String::new();
     yt_dlp_cmd.push_str("yt-dlp");
     yt_dlp_cmd.push_str(&output_directory);
-    if download_request.audio_only {
-        // Requires (ffmpeg or ffprobe)
-        yt_dlp_cmd.push_str("--extract-audio");
-    }
+    yt_dlp_cmd.push_str(&format_flag);
     yt_dlp_cmd.push_str(&output_template);
     yt_dlp_cmd.push_str(&quoted_url);
     yt_dlp_cmd.to_string();
