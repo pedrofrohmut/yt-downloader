@@ -2,13 +2,12 @@ use std::{process::{Command, Output}, fs, path::Path};
 
 use serde::Deserialize;
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 pub struct DownloadRequest {
     url: String,
     output_dir: String,
     audio_only: bool,
-    artist: String,
-    track_name: String,
+    file_name: String,
 }
 
 #[tauri::command(rename_all="snake_case")]
@@ -25,8 +24,7 @@ pub fn download_video(download_request: DownloadRequest) -> String
 
     let file_exists = check_file_exists(download_request.audio_only,
                                         &output_dir,
-                                        &download_request.artist,
-                                        &download_request.track_name);
+                                        &download_request.file_name);
     if file_exists {
         eprintln!("Error: file already exist");
         return "Error: File with this name already exist".to_string()
@@ -50,8 +48,7 @@ pub fn download_video(download_request: DownloadRequest) -> String
 
     let ffmpeg_output = execute_ffmpeg_command(TEMP_FILE_PATH,
                                                download_request.audio_only,
-                                               &download_request.artist,
-                                               &download_request.track_name,
+                                               &download_request.file_name,
                                                &output_dir);
     match ffmpeg_output {
         Err(err) => {
@@ -67,12 +64,12 @@ pub fn download_video(download_request: DownloadRequest) -> String
     return String::from("Download and Convertion Complete");
 }
 
-fn check_file_exists(audio_only: bool, output_dir: &str, artist: &str, track_name: &str) -> bool
+fn check_file_exists(audio_only: bool, output_dir: &str, file_name: &str) -> bool
 {
     let str_path = if audio_only {
-        format!("{}{} - {}.mp3", output_dir, artist, track_name)
+        format!("{}{}.mp3", output_dir, file_name)
     } else {
-        format!("{}{} - {}.mp4", output_dir, artist, track_name)
+        format!("{}{}.mp4", output_dir, file_name)
     };
     let path = Path::new(&str_path);
     path.exists()
@@ -105,16 +102,15 @@ fn execute_yt_dlp_command(temp_file_path: &str, audio_only: bool, output_dir: &s
 
 fn execute_ffmpeg_command(temp_file_path: &str,
                           audio_only: bool,
-                          artist: &str,
-                          track_name: &str,
+                          file_name: &str,
                           output_dir: &str) -> Result<Output, std::io::Error>
 {
     let input_flag = format!(" -i \"{}\" ", temp_file_path);
 
     let output_file = if audio_only {
-        format!(" \"{}{} - {}.mp3\" ", output_dir, artist, track_name)
+        format!(" \"{}{}.mp3\" ", output_dir, file_name)
     } else {
-        format!(" \"{}{} - {}.mp4\" ", output_dir, artist, track_name)
+        format!(" \"{}{}.mp4\" ", output_dir, file_name)
     };
 
     let mut ffmpeg_cmd = String::new();

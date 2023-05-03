@@ -8,15 +8,14 @@ type DownloadRequest = {
     url: string
     output_dir: string
     audio_only: boolean
-    artist: string
-    track_name: string
+    file_name: string
 }
 
 const App = () => {
     const urlRef = useRef<HTMLInputElement | null>(null)
     const outputDirRef = useRef<HTMLInputElement | null>(null)
-    const artistRef = useRef<HTMLInputElement | null>(null)
-    const trackNameRef = useRef<HTMLInputElement | null>(null)
+    const fileNameRef = useRef<HTMLInputElement | null>(null)
+
     const [audioOnly, setAudioOnly] = useState(true)
 
     const [showMessage, setShowMessage] = useState(false)
@@ -38,12 +37,11 @@ const App = () => {
 
         const url = getValueFromRef(urlRef)
         const outputDir = getValueFromRef(outputDirRef)
-        const artist = getValueFromRef(artistRef)
-        const trackName = getValueFromRef(trackNameRef)
+        const fileName = getValueFromRef(fileNameRef)
 
-        if (url === "" || outputDir === "" || artist === "" || trackName === "") {
+        if (url === "" || outputDir === "" || fileName === "") {
             setIsErrorMessage(true)
-            handleShowMessage("Url, Output Dir, Artist and Track Name are required")
+            handleShowMessage("Url, Output Dir, FileName are required")
             return
         }
 
@@ -55,8 +53,7 @@ const App = () => {
                 url,
                 output_dir: outputDir,
                 audio_only: audioOnly,
-                artist,
-                track_name: trackName
+                file_name: fileName
             } as DownloadRequest
         })) as string
 
@@ -64,7 +61,6 @@ const App = () => {
             setIsErrorMessage(true)
         } else {
             setValueToRef(urlRef, "")
-            setValueToRef(trackNameRef, "")
         }
         handleShowMessage(resultMessage)
     }
@@ -103,16 +99,10 @@ const App = () => {
                         <input type="text" ref={outputDirRef} required />
                     </div>
 
-                    {/* Artist */}
+                    {/* File Name */}
                     <div className="form-group">
-                        <label>Artist</label>
-                        <input type="text" ref={artistRef} />
-                    </div>
-
-                    {/* Track Name */}
-                    <div className="form-group">
-                        <label>Track Name</label>
-                        <input type="text" ref={trackNameRef} />
+                        <label>File Name</label>
+                        <input type="text" ref={fileNameRef} required />
                     </div>
 
                     {/* Media Type */}
