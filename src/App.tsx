@@ -41,9 +41,6 @@ const App = () => {
         const artist = getValueFromRef(artistRef)
         const trackName = getValueFromRef(trackNameRef)
 
-        setValueToRef(urlRef, "")
-        setValueToRef(trackNameRef, "")
-
         if (url === "" || outputDir === "" || artist === "" || trackName === "") {
             setIsErrorMessage(true)
             handleShowMessage("Url, Output Dir, Artist and Track Name are required")
@@ -65,6 +62,9 @@ const App = () => {
 
         if (resultMessage.includes("Error")) {
             setIsErrorMessage(true)
+        } else {
+            setValueToRef(urlRef, "")
+            setValueToRef(trackNameRef, "")
         }
         handleShowMessage(resultMessage)
     }
@@ -106,13 +106,13 @@ const App = () => {
                     {/* Artist */}
                     <div className="form-group">
                         <label>Artist</label>
-                        <input type="text" ref={artistRef} required />
+                        <input type="text" ref={artistRef} />
                     </div>
 
                     {/* Track Name */}
                     <div className="form-group">
                         <label>Track Name</label>
-                        <input type="text" ref={trackNameRef} required />
+                        <input type="text" ref={trackNameRef} />
                     </div>
 
                     {/* Media Type */}
