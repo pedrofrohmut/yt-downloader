@@ -1,6 +1,6 @@
 use std::{process::{Command, Output}, fs, path::Path};
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Debug)]
 pub struct DownloadRequest {
@@ -10,30 +10,46 @@ pub struct DownloadRequest {
     file_name: String,
 }
 
+#[derive(Serialize)]
+pub struct ReturnMessage {
+    is_error: bool,
+    message: String,
+}
+
+#[tauri::command(rename_all="snake_case")]
+pub fn check_file_exists(download_request: DownloadRequest) -> ReturnMessage
+{
+    println!("[PATH] Checking if File Exists");
+
+    let output_dir = add_ending_slash(&download_request.output_dir);
+
+    let str_path = if download_request.audio_only {
+        format!("{}{}.mp3", &output_dir, &download_request.file_name)
+    } else {
+        format!("{}{}.mp4", &output_dir, &download_request.file_name)
+    };
+
+    let path = Path::new(&str_path);
+    if path.exists() {
+        eprintln!("[PATH] Error: file already exist");
+        return ReturnMessage {
+            is_error: true, message: "File with this name already exist".to_string()
+        };
+    } else {
+        println!("[PATH] Path available. Continuing");
+    }
+
+    ReturnMessage { is_error: false, message: "Path available".to_string() }
+}
+
 #[tauri::command(rename_all="snake_case")]
 pub fn download_video(download_request: DownloadRequest) -> String
 {
-    println!("[START] Download and convertion");
-
-    // Add the / at the end if needed
-    let output_dir = if download_request.output_dir.ends_with("/") {
-        download_request.output_dir
-    } else {
-        String::from(download_request.output_dir + "/")
-    };
-
-    let file_exists = check_file_exists(download_request.audio_only,
-                                        &output_dir,
-                                        &download_request.file_name);
-    if file_exists {
-        eprintln!("Error: file already exist");
-        return "Error: File with this name already exist".to_string()
-    }
-
-    println!("...Starting Download");
-
+    let output_dir = add_ending_slash(&download_request.output_dir);
     const TEMP_FILE_PATH: &str = "/tmp/YT_DOWNLOADER_TEMP_FILE.webm";
 
+    println!("[START] Download and convertion");
+    println!("...Starting Download");
     let yt_dlp_output = execute_yt_dlp_command(TEMP_FILE_PATH,
                                                download_request.audio_only,
                                                &output_dir,
@@ -64,15 +80,13 @@ pub fn download_video(download_request: DownloadRequest) -> String
     return String::from("Download and Convertion Complete");
 }
 
-fn check_file_exists(audio_only: bool, output_dir: &str, file_name: &str) -> bool
+fn add_ending_slash(path: &str) -> String
 {
-    let str_path = if audio_only {
-        format!("{}{}.mp3", output_dir, file_name)
+    if path.ends_with("/") {
+        String::from(path)
     } else {
-        format!("{}{}.mp4", output_dir, file_name)
-    };
-    let path = Path::new(&str_path);
-    path.exists()
+        String::from(path.to_string() + "/")
+    }
 }
 
 fn execute_yt_dlp_command(temp_file_path: &str, audio_only: bool, output_dir: &str, url: &str) -> Result<Output, std::io::Error>
@@ -95,6 +109,7 @@ fn execute_yt_dlp_command(temp_file_path: &str, audio_only: bool, output_dir: &s
     yt_dlp_cmd.push_str(&output_directory);
     yt_dlp_cmd.push_str(&format_flag);
     yt_dlp_cmd.push_str(&output_template);
+    yt_dlp_cmd.push_str(" --socket-timeout 15 ");
     yt_dlp_cmd.push_str(&quoted_url);
 
     Command::new("bash").arg("-c").arg(yt_dlp_cmd).output()

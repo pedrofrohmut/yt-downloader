@@ -11,6 +11,11 @@ type DownloadRequest = {
     file_name: string
 }
 
+type ResultMessage = {
+    is_error: boolean
+    message: string
+}
+
 const App = () => {
     const urlRef = useRef<HTMLInputElement | null>(null)
     const outputDirRef = useRef<HTMLInputElement | null>(null)
@@ -48,21 +53,33 @@ const App = () => {
         localStorage.setItem("last_output_dir", outputDir)
 
         // Always go for snake case when invoking Rust
-        const resultMessage = (await invoke("download_video", {
-            download_request: {
-                url,
-                output_dir: outputDir,
-                audio_only: audioOnly,
-                file_name: fileName
-            } as DownloadRequest
+        const downloadRequest = {
+            url,
+            output_dir: outputDir,
+            audio_only: audioOnly,
+            file_name: fileName
+        } as DownloadRequest
+
+        const checkFileExistsResultMessage = (await invoke("check_file_exists", {
+            download_request: downloadRequest
+        })) as ResultMessage
+
+        if (checkFileExistsResultMessage.is_error) {
+            setIsErrorMessage(true)
+            handleShowMessage(checkFileExistsResultMessage.message)
+            return
+        }
+
+        const downloadResultMessage = (await invoke("download_video", {
+            download_request: downloadRequest
         })) as string
 
-        if (resultMessage.includes("Error")) {
+        if (downloadResultMessage.includes("Error")) {
             setIsErrorMessage(true)
         } else {
             setValueToRef(urlRef, "")
         }
-        handleShowMessage(resultMessage)
+        handleShowMessage(downloadResultMessage)
     }
 
     useEffect(() => {
