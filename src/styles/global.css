@@ -108,3 +108,12 @@ button[type="submit"]:focus {
     background-color: #ff4d4d;
     color: #fff;
 }
+
+.is-working {
+    color: #aaa;
+    font-size: 1.4rem;
+
+    position: fixed;
+    top: 1.5rem;
+    right: 1.5rem;
+}

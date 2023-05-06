@@ -17,7 +17,7 @@ pub struct ReturnMessage {
 }
 
 #[tauri::command(rename_all="snake_case")]
-pub fn check_file_exists(download_request: DownloadRequest) -> ReturnMessage
+pub async fn check_file_exists(download_request: DownloadRequest) -> ReturnMessage
 {
     println!("[PATH] Checking if File Exists");
 
@@ -43,7 +43,7 @@ pub fn check_file_exists(download_request: DownloadRequest) -> ReturnMessage
 }
 
 #[tauri::command(rename_all="snake_case")]
-pub fn download_video(download_request: DownloadRequest) -> String
+pub async fn download_video(download_request: DownloadRequest) -> String
 {
     let output_dir = add_ending_slash(&download_request.output_dir);
     const TEMP_FILE_PATH: &str = "/tmp/YT_DOWNLOADER_TEMP_FILE.webm";

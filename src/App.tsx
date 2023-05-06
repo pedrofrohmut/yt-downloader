@@ -23,6 +23,9 @@ const App = () => {
 
     const [audioOnly, setAudioOnly] = useState(true)
 
+    const [isWorking, setIsWorking] = useState(false)
+    const [workingMessage, setWorkingMessage] = useState("")
+
     const [showMessage, setShowMessage] = useState(false)
     const [message, setMessage] = useState("")
     const [isErrorMessage, setIsErrorMessage] = useState(false)
@@ -35,6 +38,16 @@ const App = () => {
             setShowMessage(false)
             setIsErrorMessage(false)
         }, 2500)
+    }
+
+    const handleShowWorking = (msg: string) => {
+        setWorkingMessage(msg)
+        setIsWorking(true)
+    }
+
+    const handleHideWorking = () => {
+        setWorkingMessage("")
+        setIsWorking(false)
     }
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -60,6 +73,8 @@ const App = () => {
             file_name: fileName
         } as DownloadRequest
 
+        handleShowWorking("Downloading...")
+
         const checkFileExistsResultMessage = (await invoke("check_file_exists", {
             download_request: downloadRequest
         })) as ResultMessage
@@ -67,8 +82,11 @@ const App = () => {
         if (checkFileExistsResultMessage.is_error) {
             setIsErrorMessage(true)
             handleShowMessage(checkFileExistsResultMessage.message)
+            handleHideWorking()
             return
         }
+
+        handleShowWorking("Converting...")
 
         const downloadResultMessage = (await invoke("download_video", {
             download_request: downloadRequest
@@ -80,6 +98,7 @@ const App = () => {
             setValueToRef(urlRef, "")
         }
         handleShowMessage(downloadResultMessage)
+        handleHideWorking()
     }
 
     useEffect(() => {
@@ -99,6 +118,8 @@ const App = () => {
                     {message}
                 </div>
             )}
+
+            {isWorking && <div className="is-working">{workingMessage}</div>}
 
             <div className="page-container">
                 <div className="page-title">YTMusic Downloader</div>
